@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+	<flow name="Asynch-MainFlow" doc:id="3bb45e5c-049e-4d7f-8ec3-e6e530d407ab" >
+		<set-payload value="Asynchronous flow initial payload" doc:name="Set Payload" doc:id="e51461ee-4610-45fd-99cd-69433fce9064" />
+		<logger level="INFO" doc:name="Logger" doc:id="e16c89bb-f1e5-410f-b7e6-4ea716e971df" message="starting flow #[payload]"/>
+		<async doc:name="Async" doc:id="a5bc0dbd-53ea-42d3-999e-3fe617473767" >
+			<flow-ref doc:name="Flow Reference" doc:id="5830f470-6a0e-4cb9-87d9-9f00e88e4812" name="Asyn-Subflow"/>
+		</async>
+		<set-payload value="outisde asyn flow payload 12345" doc:name="Set Payload" doc:id="9deafc86-4639-41e8-9c37-b7e0d60b4ee2" />
+		<logger level="INFO" doc:name="Logger" doc:id="c5e0902d-fe43-4842-a0f6-b6e75c476c42" message="end flow payload #[payload]"/>
+	</flow>
+	<flow name="Asyn-Subflow" doc:id="4ec9217b-2171-4436-abbb-b2be3b665310" >
+		<logger level="INFO" doc:name="Logger" doc:id="b3990b48-396a-4228-b94f-00ec5af659de" />
+		<set-payload value="It is subflow payload 112233" doc:name="Set Payload" doc:id="c9922cad-978b-4e24-9720-0e8c623c0488" />
+		<logger level="INFO" doc:name="Logger" doc:id="5bdad550-5153-4349-9e5c-367fa7a7abfb" message="Inside asyn flow payload #[payload]" />
+	</flow>
+	</mule>
