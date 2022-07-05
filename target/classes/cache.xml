@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="f1eacc4f-1bc1-49c8-b38d-8b3b57951304"/>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="1283d51f-379f-4593-8025-afcba33df58e" >
+		<http:request-connection protocol="HTTPS" host="jsonplaceholder.typicode.com" />
+	</http:request-config>
+	<http:listener-config name="HTTP_ListenerConfig" doc:name="HTTP Listener config" doc:id="97a37f21-c235-452c-a44c-50e4fc3002dd" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="05bbf074-2055-42f5-ac77-c0551bb9ebc4" file="propFile.properties" />
+	<flow name="attributes-flow" doc:id="2dfa5c7c-f23e-4d3b-aad9-a858dc66c3a3" >
+		<logger level="INFO" doc:name="Logger" doc:id="e138457e-8f90-4fa6-9a1d-48e2c182f201" message="flow start" />
+		<http:request method="GET" doc:name="Request" doc:id="aa8ae83d-fffe-4584-8549-d113f68b9d32" config-ref="HTTP_Request_configuration" path="/{users}/{id}">
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	id : attributes.uriParams.id,
+	users : attributes.uriParams.users
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="Attribute2" doc:id="dfbccb83-9d5e-4fb2-acb5-26ab20ddf4dc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+	employee: payload
+}]]></ee:set-payload>
+				<ee:set-attributes ><![CDATA[myattribute: "12345" ]]></ee:set-attributes>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="3dd80d5f-21b1-4cc2-b30c-be5fb050ea7e" message="flow end"/>
+	</flow>
+	<flow name="cacheFlow" doc:id="f3f234c7-0641-4700-8540-91b864e145c2" >
+		<http:listener doc:name="Listener" doc:id="5b927931-e4dd-44b5-83b1-8eec73414e33" path="/cache/{first}/{second}" config-ref="HTTP_ListenerConfig" />
+		<logger level="INFO" doc:name="Logger" doc:id="a58208e6-acb7-47ef-b5cf-1bd3c8a1386d" message="Flow starting"/>
+	
+			<http:request method="GET" doc:name="Request" doc:id="94403818-51eb-48a4-8dde-16b2b35aa0fc" config-ref="HTTP_Request_configuration" path="/{user}/{id}">
+				<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	id : attributes.uriParams.second,
+	user : attributes.uriParams.first
+}]]]></http:uri-params>
+			</http:request>
+			<logger level="INFO" doc:name="Logger" doc:id="b6de51e4-5e56-4cde-8de5-acc89c95cc35" message="Cache Flow"/>
+		
+		<ee:transform doc:name="Transform Message" doc:id="fdd0e778-efff-4edf-a145-8ae0cea10144" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="8314d80e-ede5-4ade-a85e-82d8e0a2639b" message="End of flow"/>
+	</flow>
+	<flow name="invalidCache" doc:id="19bb68d9-8196-4c63-9f10-3252834e55cd" >
+		<scheduler doc:name="Scheduler" doc:id="69b73e67-f99c-410c-b6e4-28e5d4cd7e34" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="45" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:invalidate-cache doc:name="Invalidate Cache" doc:id="c87f4203-1b2d-44d0-908d-de14c0e74ef9" cachingStrategy-ref="Caching_Strategy"/>
+	</flow>
+	
+</mule>
